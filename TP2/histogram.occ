@@ -1,0 +1,20 @@
+#USE "course.lib"
+
+PROC source(CHAN OF INT out)
+  VAL [] INT image IS [4,10,9,0,1,56,17,20,15,12,10,7,53,26,48,1,3,18,35,-1]:
+    
+  WHILE TRUE
+    SEQ i=0 FOR SIZE image
+      out ! image[i]
+:
+
+PROC system(CHAN OF BYTE screen)
+  CHAN OF INT pixel
+  
+  PAR
+    source(pixel)
+    
+    PAR i=0 FOR 10
+      histoBloc(pixel, i, in, link, out)
+      affichage(out)
+:
