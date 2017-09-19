@@ -1,0 +1,45 @@
+#USE "course.lib"
+
+
+PROC source(CHAN OF INT out)
+  VAL [] INT image IS [4,10,9,0,1,56,17,20]:
+    
+  SEQ i=0 FOR SIZE image
+    out  ! image[i]
+:
+
+PROC seuillage(VAL INT threshold, CHAN OF INT in, CHAN OF BOOL out, VAL INT size)
+  INT pixel:
+  
+  SEQ i=0 FOR size
+    SEQ
+      in ? pixel
+      out ! pixel > threshold
+:
+
+PROC affichage(CHAN OF BOOL in, CHAN OF BYTE screen, VAL INT size)
+  BOOL trigger:
+  
+  SEQ i=0 FOR size
+    SEQ
+      in ? trigger
+      
+      IF 
+        trigger = TRUE
+          out.string("1", 0, screen)
+        trigger = FALSE
+          out.string("0", 0, screen) 
+:
+
+PROC system(CHAN OF BYTE screen)
+  CHAN OF INT c:
+  CHAN OF BOOL d:
+  INT size:
+  
+  SEQ
+    size := 8
+    PAR 
+      source(c)
+      seuillage(15,c,d,size)
+      affichage(d,screen,size)
+:  
