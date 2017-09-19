@@ -1,0 +1,36 @@
+#USE "course.lib"
+
+PROC source(CHAN OF INT out)
+  out ! 3
+:
+
+PROC seuillage(VAL INT threshold, CHAN OF INT in, CHAN OF BOOL out)
+  INT pixel:
+  
+  SEQ
+    in ? pixel
+    out ! pixel > threshold
+:
+
+PROC affichage(CHAN OF BOOL in, CHAN OF BYTE screen)
+  BOOL trigger:
+  
+  SEQ
+    in ? trigger
+    
+    IF 
+      trigger = TRUE
+        out.string("1", 0, screen)
+      trigger = FALSE
+        out.string("0", 0, screen) 
+:
+
+PROC system(CHAN OF BYTE screen)
+  CHAN OF INT c:
+  CHAN OF BOOL d:
+  
+  PAR 
+    source(c)
+    seuillage(2,c,d)
+    affichage(d,screen)
+:  
