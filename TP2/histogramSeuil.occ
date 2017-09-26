@@ -1,0 +1,63 @@
+#USE "course.lib"
+
+PROC source(CHAN OF INT out)
+  VAL [] INT image IS [4,3,7,7,1,56,3,20,3,12,10,7,53,26,48,1,3,18,35,-1]:
+    
+  WHILE TRUE
+    SEQ i=0 FOR SIZE image
+      out ! image[i]
+:
+
+PROC histoBloc(CHAN OF INT in, out, aff, VAL INT valeur, VAL INT seuil)
+  INT resultat:
+  INT pixel:
+  
+  SEQ
+    resultat := 0
+    WHILE TRUE 
+      SEQ
+        in ? pixel
+        IF
+          resultat = seuil
+            SEQ
+              aff ! resultat
+              out ! pixel
+              resultat := 0
+          pixel <> valeur
+            out ! pixel
+          pixel = valeur
+            resultat := resultat + 1
+        
+:
+
+PROC affichage([10] CHAN OF INT aff, CHAN OF BYTE screen)
+  INT resultat:
+  
+  WHILE TRUE
+    SEQ
+      ALT i = 0 FOR 10
+        aff[i] ? resultat
+          SEQ
+            screen ! '['
+            out.number(i, 1, screen)
+            screen ! ','
+            out.number(resultat, 1, screen)
+            screen ! ']'
+      screen ! '*n'
+:
+
+PROC system(CHAN OF BYTE screen)
+  [11] CHAN OF INT c:
+  [10] CHAN OF INT aff:
+  INT poubelle:
+  
+  PAR
+    source(c[0])
+    affichage(aff, screen)
+    
+    PAR i=0 FOR 10
+      histoBloc(c[i], c[i+1], aff[i], i, 2) -- Parallélise l'exécution des histoblocs
+    
+    WHILE TRUE
+      c[10] ? poubelle -- Supprime la valeur envoyée en sortie par le dernier histobloc
+:
