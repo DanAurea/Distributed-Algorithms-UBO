@@ -1,0 +1,77 @@
+#USE "course.lib"
+
+-- Declaration du protocole (format de message)
+PROTOCOL print IS INT; BOOL; INT; INT:
+VAL INT nbNode IS 4:
+VAL INT nbLoop IS 5:
+VAL INT null   IS -1:
+
+
+PROC nodeInRing(VAL INT id, CHAN OF print in, out, screenChan)
+  INT msgIn, msgOut, cptTour, trash1, idLeaderIn, idLeaderOut:
+  BOOL isLeader, trash2:
+
+
+  SEQ
+    cptTour     := 0
+    msgOut      := id
+    isLeader    := FALSE
+    idLeaderIn  := null
+    idLeaderOut := null
+
+    SEQ i = 0 FOR nbLoop
+      SEQ
+        
+        PAR
+          in    ? trash1;trash2;msgIn;idLeaderIn
+          out   ! null;FALSE;msgOut;idLeaderOut
+
+        IF
+          msgIn = id
+            SEQ
+              isLeader    := TRUE
+              idLeaderOut := id
+          msgIn < id
+            msgOut    := null
+          msgIn > id
+            msgOut    := msgIn
+
+        cptTour := cptTour + 1
+
+        screenChan ! cptTour;isLeader;msgIn;idLeaderIn
+:
+
+PROC ringScreen([nbNode] CHAN OF print screenChan, CHAN OF BYTE screen)
+  INT nbRecu, tour, idLeader:
+  BOOL isLeader:
+
+  SEQ i=0 FOR (nbLoop * nbNode) 
+    SEQ
+      ALT i = 0 FOR nbNode
+        screenChan[i] ? tour;isLeader;nbRecu;idLeader
+          SEQ
+            screen ! '['
+            out.number(i, 1, screen)
+            screen ! ','
+            out.number(tour, 1, screen)
+            screen ! ','
+            out.number(nbRecu, 1, screen)
+            screen ! ','
+            out.bool(isLeader, 1, screen)
+            screen ! ','
+            out.number(idLeader, 1, screen)
+            screen ! ']'
+      screen ! '*n'     
+:
+
+PROC system(CHAN OF BYTE screen)
+  [4] CHAN OF print screenChan:
+  [4] CHAN OF print nodeChan:
+
+  PAR 
+    nodeInRing(0, nodeChan[3], nodeChan[1], screenChan[0])
+    nodeInRing(1, nodeChan[0], nodeChan[2], screenChan[1])
+    nodeInRing(2, nodeChan[1], nodeChan[3], screenChan[2])
+    nodeInRing(3, nodeChan[2], nodeChan[0], screenChan[3])
+    ringScreen(screenChan, screen)
+:

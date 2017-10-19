@@ -1,0 +1,73 @@
+#USE "course.lib"
+
+-- Declaration du protocole (format de message)
+PROTOCOL print IS INT; INT:
+VAL INT nbNode IS 4:
+VAL INT nbLoop IS 5:
+VAL INT token  IS -2:
+VAL INT null   IS -1:
+
+
+PROC nodeInRing(CHAN OF print in, out, screenChan, VAL BOOL initToken)
+  INT inBuf:
+  INT cptTour:
+  INT rcv:
+  BOOL hasToken:
+
+  SEQ
+    cptTour   := 0
+    hasToken  := initToken
+    SEQ i = 0 FOR nbLoop
+      SEQ
+        
+        PAR
+          in    ? inBuf;rcv -- Réucupère le token
+          IF
+            hasToken = TRUE
+              SEQ
+                out   ! null;token
+                hasToken := FALSE
+            TRUE
+              out   ! null;null
+
+        IF
+          rcv = token
+            hasToken  := TRUE
+          TRUE
+            SKIP
+
+        cptTour := cptTour + 1
+
+        screenChan ! cptTour;rcv
+:
+
+PROC ringScreen([nbNode] CHAN OF print screenChan, CHAN OF BYTE screen)
+  INT msg:
+  INT token:
+
+  SEQ i=0 FOR (nbLoop * nbNode) 
+    SEQ
+      ALT i = 0 FOR nbNode
+        screenChan[i] ? msg;token
+          SEQ
+            screen ! '['
+            out.number(i, 1, screen)
+            screen ! ','
+            out.number(msg, 1, screen)
+            screen ! ','
+            out.number(token, 1, screen)
+            screen ! ']'
+      screen ! '*n'     
+:
+
+PROC system(CHAN OF BYTE screen)
+  [4] CHAN OF print screenChan:
+  [4] CHAN OF print nodeChan:
+
+  PAR 
+    nodeInRing(nodeChan[3], nodeChan[1], screenChan[0], FALSE)
+    nodeInRing(nodeChan[0], nodeChan[2], screenChan[1], FALSE)
+    nodeInRing(nodeChan[1], nodeChan[3], screenChan[2], FALSE)
+    nodeInRing(nodeChan[2], nodeChan[0], screenChan[3], TRUE)
+    ringScreen(screenChan, screen)
+:

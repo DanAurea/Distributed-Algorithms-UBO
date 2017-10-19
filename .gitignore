@@ -3,5 +3,4 @@
 !*.occ
 !Makefile
 !.gitignore
-!TP1
-!TP2
+!TP*

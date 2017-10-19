@@ -1,0 +1,91 @@
+#INCLUDE "consts.inc"
+#USE "course.lib"
+
+VAL INT Temmetteur IS 10:
+VAL INT Trecepteur IS 1:
+VAL INT PASTEMPS IS 10000:
+VAL INT TailleMax IS 100:
+
+--procedure de temporisation
+PROC Tempo (VAL INT pas)
+  TIMER clock :
+  INT timeNow :
+  INT timeToWait :
+  SEQ
+    clock ? timeNow
+    timeToWait := timeNow + (pas*PASTEMPS)
+    clock ? AFTER timeToWait
+:
+
+PROC canalAsync(CHAN OF BYTE sendChan, rcvReqChan, rcvDataChan, VAL INT room)
+  --room : nb de cases disponibles dans la fifo
+  --déclaration et initialisation
+  [TailleMax] BYTE fifo:
+  BYTE req, m:
+  INT occupation, maximum, writeCursor, readCursor:
+  
+  SEQ
+    
+    occupation := 0
+    maximum    := room
+    
+    readCursor    := 0
+    writeCursor   := 0
+    
+    WHILE TRUE
+      ALT
+        sendChan ? m
+          SEQ
+            
+            IF 
+              writeCursor < room
+                SEQ
+                  fifo[writeCursor] :=  m
+                  
+                  writeCursor   := (writeCursor + 1) REM room
+                  occupation    := occupation + 1
+              TRUE
+                SKIP
+          
+        rcvReqChan ? req
+          SEQ
+            
+            IF 
+              occupation = 0
+                rcvDataChan ! '#'
+              TRUE
+                SEQ
+                  m := fifo[readCursor]
+                  rcvDataChan ! m 
+                   
+                  readCursor   := (readCursor + 1) REM room
+                  occupation := occupation - 1
+:
+
+PROC emetteur(CHAN OF BYTE send)
+  VAL [] BYTE phrase IS "essai de transfert *n":
+  WHILE TRUE
+    SEQ i=0 FOR SIZE phrase
+      SEQ
+        send ! phrase[i]
+        Tempo(Temmetteur)
+:
+
+PROC recepteur(CHAN OF BYTE rcvReq,rcvData,screen)
+  BYTE m:
+  WHILE TRUE
+    SEQ
+      rcvReq ! 'r'
+      rcvData ? m
+      screen ! m
+      Tempo(Trecepteur)
+:
+
+PROC systeme (CHAN OF BYTE keyboard, screen, error)  
+  CHAN OF BYTE send,rcvReq,rcvData:
+  PAR
+    canalAsync(send, rcvReq, rcvData, 10)
+    emetteur (send)
+    recepteur (rcvReq, rcvData, error)
+:
+
