@@ -14,8 +14,6 @@ DATA TYPE INFOROUTE
 
 DATA TYPE TABROUTE IS [7] INFOROUTE:
 
-
-
   
 --definition de la procedure pour le multiplexage de l'impression
 --affiche la table de routage d'un noeud 
@@ -51,7 +49,13 @@ PROC routeur (VAL INT id, [] CHAN OF TABROUTE in, [] CHAN OF TABROUTE out,CHAN O
   TABROUTE tableLoc:
   [maxVois] TABROUTE tableVois:
   SEQ
-   --initialisation des tables
+    SEQ i=0 FOR SIZE tableLoc
+      IF
+        i = id
+          tableLoc[i][cout] := 0
+        TRUE
+          tableLoc[i][cout] := 16
+    
     WHILE TRUE
       SEQ
         --communications
@@ -63,19 +67,32 @@ PROC routeur (VAL INT id, [] CHAN OF TABROUTE in, [] CHAN OF TABROUTE out,CHAN O
 --procedure pour la definition d'un reseau (avec exemple de codage incomplet)
 PROC reseau(CHAN OF BYTE keyboard,screen,error)
   [7]CHAN OF TABROUTE dummyScreen:
-  [???????]CHAN OF TABROUTE lien: --la taille du tableau (nombre de liens) dépend de la topologie
+  [18]CHAN OF TABROUTE lien: --la taille du tableau (nombre de liens) dépend de la topologie
   --exemple de codage pour connecter les noeuds
-  r0In IS [lien[1], lien[11]]:
-  r1In IS [lien[0], lien[3], lien[5]]:
-  
-  r0Out IS [lien[0], lien[10]]:
-  r1Out IS [lien[1], lien[2], lien[4]]:
+  r0Out IS [lien[0], lien[1], lien[2]]:
+  r1Out IS [lien[10], lien[6]]:
+  r2Out IS [lien[4], lien[5], lien[11]]:
+  r3Out IS [lien[8], lien[9], lien[7]]:          
+  r4Out IS [lien[13], lien[14], lien[3]]:
+  r5Out IS [lien[12], lien[15]]:
+  r6Out IS [lien[16], lien[17]]:
+
+  r0In IS [lien[10], lien[11], lien[12]]:
+  r1In IS [lien[0], lien[5]]:
+  r2In IS [lien[7], lien[6], lien[1]]:
+  r3In IS [lien[3], lien[17], lien[4]]:
+  r4In IS [lien[15], lien[16], lien[8]]:
+  r5In IS [lien[2], lien[13]]:
+  r6In IS [lien[14], lien[9]]:
   
   PAR
-    --exemple avec 2 noeuds
     ringScreen(dummyScreen,screen)
     routeur(0,r0In,r0Out,dummyScreen[0])
     routeur(1,r1In,r1Out,dummyScreen[1])
-    ...
+    routeur(2,r2In,r2Out,dummyScreen[2])
+    routeur(3,r3In,r3Out,dummyScreen[3])
+    routeur(4,r4In,r4Out,dummyScreen[4])
+    routeur(5,r5In,r5Out,dummyScreen[5])
+    routeur(6,r6In,r6Out,dummyScreen[6])
+    
 :
-
