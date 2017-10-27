@@ -49,6 +49,7 @@ PROC routeur (VAL INT id, [] CHAN OF TABROUTE in, [] CHAN OF TABROUTE out,CHAN O
   TABROUTE tableLoc:
   [maxVois] TABROUTE tableVois:
   SEQ
+
     SEQ i=0 FOR SIZE tableLoc
       IF
         i = id
@@ -59,6 +60,13 @@ PROC routeur (VAL INT id, [] CHAN OF TABROUTE in, [] CHAN OF TABROUTE out,CHAN O
     WHILE TRUE
       SEQ
         --communications
+        PAR
+          PAR i=0 FOR SIZE in
+            in[i] ? tableVois[i]
+
+          PAR i=0 FOR SIZE out
+            out[i] ! tableLoc  
+
         --changement d'etat de la table locale
         --affichage de la table locale
         screenOut ! tableLoc
